@@ -1,0 +1,3 @@
+# 项目说明
+本项目是MonacoEditorFx项目的一部分，它为MonacoEditorFx项目集成Monaco Editor提供了web层面的实现（包括js、html、css）。
+本质上它就是对Monaco Editor中主要API的封装，以便在MonacoEditorFx的代码（主要使用kotlin）中能够更自然且方便地调用Monaco Editor的API。
