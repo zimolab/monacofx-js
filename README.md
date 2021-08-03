@@ -2,6 +2,9 @@
 本项目是MonacoEditorFx项目的一部分，它为MonacoEditorFx项目集成Monaco Editor提供了web层面的实现（包括js、html、css）。
 本质上它就是对Monaco Editor中主要API的封装，以便在MonacoEditorFx的代码（主要使用kotlin）中能够更自然且方便地调用Monaco Editor的API。
 
+## hostenv.js
+在js全局对象（window）上定义了HOST_ENV_READY_EVENT事件，该事件由kotlin触发，其触发表明js所依赖的宿主环境（kotlin）已经准备就绪，相关的kotlin对象已经注入到js上下文中，在js中可以安全地调用这些对象了。
+
 ## index.html/index.js
 入口文件。
 
