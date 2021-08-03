@@ -1,0 +1,9 @@
+{
+  "onDidChangeAttached": 0,
+  "onDidChangeContent": 1,
+  "onDidChangeDecorations": 2,
+  "onDidChangeLanguage": 3,
+  "onDidChangeLanguageConfiguration": 4,
+  "onDidChangeOptions": 5,
+  "onWillDispose": 6
+}
