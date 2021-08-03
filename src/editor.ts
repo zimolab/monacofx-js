@@ -30,7 +30,7 @@ import IEditorContribution = editor.IEditorContribution;
 import IIdentifiedSingleEditOperation = editor.IIdentifiedSingleEditOperation;
 import ICursorStateComputer = editor.ICursorStateComputer;
 import ICommand = editor.ICommand;
-import {TextModel} from "./model";
+import { TextModel } from "./model";
 import IStandaloneThemeData = editor.IStandaloneThemeData;
 import EditorOption = editor.EditorOption;
 
@@ -88,7 +88,7 @@ export class Editor {
 
     onEditorEvent(eventId: number, e?: any) {
         if (this._codeEditor != null && this._javaEditorProxy != null) {
-            this._javaEditorProxy.onEditorEvent(eventId, (e==undefined)? null : e)
+            this._javaEditorProxy.onEditorEvent(eventId, (e == undefined) ? null : e)
         }
     }
     /************************************************************************/
@@ -282,7 +282,7 @@ export class Editor {
         return this._textModel
     }
 
-    setTextModel(model: TextModel|null): boolean {
+    setTextModel(model: TextModel | null): boolean {
         if (this._codeEditor == null)
             return false
         this._codeEditor.setModel(model.model)
@@ -529,7 +529,7 @@ export class Editor {
      * 添加一个Action
      * @param descriptor
      */
-    addAction(descriptor: any):boolean {
+    addAction(descriptor: any): boolean {
         if (this._codeEditor != null) {
             let _this = this
             let actualDescriptor: IActionDescriptor = {
@@ -567,7 +567,7 @@ export class Editor {
      * 移除一个Action
      * @param actionId
      */
-    removeAction(actionId: string):boolean {
+    removeAction(actionId: string): boolean {
         if (this._codeEditor != null && actionId in this._addedActions) {
             let action = this._addedActions[actionId]
             action.dispose()
@@ -583,7 +583,7 @@ export class Editor {
      * @param commandHandlerId
      * @param context
      */
-    addCommand(keybinding: number, commandHandlerId: string, context?: string):boolean {
+    addCommand(keybinding: number, commandHandlerId: string, context?: string): boolean {
         if (this._codeEditor != null) {
             let _this = this
             let commandId = this._codeEditor.addCommand(keybinding, function (...args: any[]) {
@@ -622,13 +622,13 @@ export class Editor {
         return false
     }
 
-    getText():string|null {
+    getText(): string | null {
         if (this._codeEditor != null)
             return this._codeEditor.getValue()
         return null
     }
 
-    focus():boolean {
+    focus(): boolean {
         if (this._codeEditor != null) {
             this._codeEditor.focus()
             return true
@@ -636,21 +636,21 @@ export class Editor {
         return false
     }
 
-    getOptions(): string|null {
+    getOptions(): string | null {
         if (this._codeEditor != null)
             return JSON.stringify(this._codeEditor.getOptions())
         else
             return null
     }
 
-    getOption(id: number): string|null {
+    getOption(id: number): string | null {
         if (this._codeEditor != null) {
             return JSON.stringify(this._codeEditor.getOption(id))
         }
         return null
     }
 
-    getCurrentLanguage(): string|null {
+    getCurrentLanguage(): string | null {
         if (this._codeEditor != null)
             return this._textModel.currentLanguage
         return null
@@ -663,7 +663,7 @@ export class Editor {
         return false
     }
 
-    getLanguages(): string|null {
+    getLanguages(): string | null {
         if (this._codeEditor != null) {
             return JSON.stringify(monaco.languages.getLanguages())
         }
@@ -696,7 +696,7 @@ export class Editor {
 
     setScrollPositionXY(positionLeft: number, positionTop: number, scrollType?: number): boolean {
         if (this._codeEditor != null) {
-            this._codeEditor.setScrollPosition({scrollLeft: positionLeft, scrollTop: positionTop}, scrollType)
+            this._codeEditor.setScrollPosition({ scrollLeft: positionLeft, scrollTop: positionTop }, scrollType)
             return true
         }
         return false
@@ -748,7 +748,7 @@ export class Editor {
         top: number;
         left: number;
         height: number;
-    }  | null {
+    } | null {
         if (this._codeEditor == null) {
             return null
         }
@@ -869,9 +869,11 @@ export class Editor {
         return this._builtinThemes
     }
 
-    defineTheme(themeName: String, themeData: IStandaloneThemeData): boolean | null {
-        return null
+    defineTheme(themeName: string, themeData: IStandaloneThemeData): boolean | null {
+        if (this._codeEditor == null)
+            return null
+        monaco.editor.defineTheme(themeName, themeData)
+        return true
     }
 
-    
 }
