@@ -8,7 +8,7 @@ import {
     Uri
 } from "monaco-editor";
 import { TextModelEventBridge } from "./EventBridge";
-import IModel = editor.IModel;
+import IModel = editor.ITextModel;
 import TextModelResolvedOptions = editor.TextModelResolvedOptions;
 import EndOfLinePreference = editor.EndOfLinePreference;
 import EndOfLineSequence = editor.EndOfLineSequence;
