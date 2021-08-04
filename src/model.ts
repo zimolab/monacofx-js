@@ -7,6 +7,7 @@ import {
     Selection,
     Uri
 } from "monaco-editor";
+import { TextModelEventBridge } from "./EventBridge";
 import IModel = editor.IModel;
 import TextModelResolvedOptions = editor.TextModelResolvedOptions;
 import EndOfLinePreference = editor.EndOfLinePreference;
@@ -18,13 +19,17 @@ import ICursorStateComputer = editor.ICursorStateComputer;
 import IValidEditOperation = editor.IValidEditOperation;
 import FindMatch = editor.FindMatch;
 
-const Events = require("./TextModelEvents.json");
-
 
 export class TextModel {
     private _javaTextModelProxy = null
     private _model: IModel | null = null
     private _currentLanguage: string = ""
+    private _eventBridge: TextModelEventBridge | null = null
+    private _eventCallback = (eventId: number, event?: any | null) => {
+        if (this._javaTextModelProxy != null) {
+            this._javaTextModelProxy.onTextModelEvent(eventId, event)
+        }
+    }
 
     get model(): editor.IModel | null {
         return this._model
@@ -40,13 +45,12 @@ export class TextModel {
 
     constructor(model: IModel) {
         this._model = model
-        this.setupTextModelEvents()
-
     }
 
     // 此方法在kotlin中被调用
     onReady(javaTextModelProxy: any) {
         this._javaTextModelProxy = javaTextModelProxy
+        this._eventBridge = new TextModelEventBridge(this._model)
     }
 
     ////////////////////////与Kotlin进行事件桥接/////////////////////////////////
@@ -56,36 +60,31 @@ export class TextModel {
         }
     }
 
-    setupTextModelEvents() {
-        this._model.onDidChangeLanguage((e) => {
-            this._currentLanguage = e.newLanguage
-            this.onTextModelEvent(Events.onDidChangeLanguage, e)
-        })
-
-        this._model.onDidChangeAttached(() => {
-            this.onTextModelEvent(Events.onDidChangeAttached, null)
-        })
-
-        this._model.onDidChangeContent((e) => {
-            this.onTextModelEvent(Events.onDidChangeContent, e)
-        })
-
-        this._model.onDidChangeDecorations((e) => {
-            this.onTextModelEvent(Events.onDidChangeDecorations, e)
-        })
-
-        this._model.onDidChangeLanguageConfiguration((e) => {
-            this.onTextModelEvent(Events.onDidChangeLanguageConfiguration, e)
-        })
-
-        this._model.onDidChangeOptions((e) => {
-            this.onTextModelEvent(Events.onDidChangeOptions, e)
-        })
-
-        this._model.onWillDispose(() => {
-            this.onTextModelEvent(Events.onWillDispose, null)
-        })
+    listen(eventId: number): boolean {
+        if (this._eventBridge == null || this._model == null) {
+            return false
+        }
+        try {
+            this._eventBridge.listen(eventId, this._eventCallback)
+        } catch (e) {
+            return false
+        }
+        return true
     }
+
+    unlisten(eventId: number): boolean {
+        if (this._eventBridge == null || this._model == null)
+            return false
+        this._eventBridge.unlisten(eventId)
+        return true
+    }
+
+    isListened(eventId: number): boolean {
+        if (this._eventBridge == null || this._model == null)
+            return false
+        return this._eventBridge.isListened(eventId)
+    }
+
 
     ///////////////////////////////////////////////////////////////////////////
 

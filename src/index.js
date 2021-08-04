@@ -15,6 +15,15 @@ require("./hostenv");
             console.log = function (message) {
                 Logger.log(message);
             }
+            console.error = function(message) {
+                Logger.error(message)
+            }
+            console.debug = function(message) {
+                Logger.info(message)
+            }
+            console.info = function(message) {
+                Logger.info(message)
+            }
         }
         _global.ME = {};
         _global.ME.ObjectCreator = new _ObjectCreator();

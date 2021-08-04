@@ -4,6 +4,7 @@
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "Node",
+    "resolveJsonModule": true,
     "module": "commonjs",
     "target": "es2015",
     "allowJs": true,

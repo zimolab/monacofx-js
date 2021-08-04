@@ -1,27 +1,14 @@
 import * as monaco from "monaco-editor"
 import {
     editor,
-    IKeyboardEvent, IPosition, IRange,
-    IScrollEvent, ISelection, Selection
+    IPosition, IRange,
+    ISelection, Selection
 } from "monaco-editor"
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor
 import IStandaloneEditorConstructionOptions = editor.IStandaloneEditorConstructionOptions
 import INewScrollPosition = editor.INewScrollPosition
 import IActionDescriptor = editor.IActionDescriptor
-import IEditorMouseEvent = editor.IEditorMouseEvent;
-import IModelContentChangedEvent = editor.IModelContentChangedEvent;
-import IModelLanguageChangedEvent = editor.IModelLanguageChangedEvent;
-import IModelLanguageConfigurationChangedEvent = editor.IModelLanguageConfigurationChangedEvent;
-import IModelOptionsChangedEvent = editor.IModelOptionsChangedEvent;
-import ConfigurationChangedEvent = editor.ConfigurationChangedEvent;
-import ICursorPositionChangedEvent = editor.ICursorPositionChangedEvent;
-import ICursorSelectionChangedEvent = editor.ICursorSelectionChangedEvent;
-import IModelChangedEvent = editor.IModelChangedEvent;
-import IModelDecorationsChangedEvent = editor.IModelDecorationsChangedEvent;
-import IPasteEvent = editor.IPasteEvent;
-import IPartialEditorMouseEvent = editor.IPartialEditorMouseEvent;
 import EditorLayoutInfo = editor.EditorLayoutInfo;
-import IContentSizeChangedEvent = editor.IContentSizeChangedEvent;
 import IEditorAction = editor.IEditorAction;
 import ICodeEditorViewState = editor.ICodeEditorViewState;
 import ScrollType = editor.ScrollType;
@@ -32,9 +19,8 @@ import ICursorStateComputer = editor.ICursorStateComputer;
 import ICommand = editor.ICommand;
 import { TextModel } from "./model";
 import IStandaloneThemeData = editor.IStandaloneThemeData;
-import EditorOption = editor.EditorOption;
+import { EditorEventBridge, EventBridge, EventCallback } from "./EventBridge"
 
-const Events = require("./EditorEvents.json");
 
 
 export class Editor {
@@ -47,6 +33,12 @@ export class Editor {
     private _addCommands = {}
     private _builtinThemes = ["vs", "vs-dark", "hc-black"]
     private _currentTheme: string | null = this._builtinThemes[0]
+    private _eventBridge: EventBridge | null = null
+    private readonly _eventCallback: EventCallback = (eventId: number, event?: any | null) => {
+        if (this._javaEditorProxy != null) {
+            this._javaEditorProxy.onEditorEvent(eventId, event)
+        }
+    }
 
     private DEFAULT_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
         language: "javascript",
@@ -69,7 +61,7 @@ export class Editor {
         return this._ready
     }
 
-    setJavaEditorProxy(editorProxy) {
+    setJavaEditorProxy(editorProxy: any) {
         this._javaEditorProxy = editorProxy
     }
 
@@ -86,172 +78,31 @@ export class Editor {
         }
     }
 
-    onEditorEvent(eventId: number, e?: any) {
-        if (this._codeEditor != null && this._javaEditorProxy != null) {
-            this._javaEditorProxy.onEditorEvent(eventId, (e == undefined) ? null : e)
+    listen(eventId: number): boolean {
+        if (this._eventBridge == null || this._codeEditor == null) {
+            return false
         }
+        try {
+            this._eventBridge.listen(eventId, this._eventCallback)
+        } catch (e) {
+            return false
+        }
+        return true
     }
-    /************************************************************************/
 
-    private setupEditorEvents(editor: IStandaloneCodeEditor) {
-        editor.onDidChangeModelContent((e: IModelContentChangedEvent) => {
-            this.onEditorEvent(Events.onDidChangeModelContent, e)
-        })
-
-        editor.onDidChangeModelLanguage((e: IModelLanguageChangedEvent) => {
-            this.onEditorEvent(Events.onDidChangeModelLanguage, e)
-        })
-        /**
-         * An event emitted when the language configuration of the current model has changed.
-         */
-        editor.onDidChangeModelLanguageConfiguration((e: IModelLanguageConfigurationChangedEvent) => {
-            this.onEditorEvent(Events.onDidChangeModelLanguageConfiguration, e)
-        })
-        /**
-         * An event emitted when the options of the current model has changed.
-         */
-        editor.onDidChangeModelOptions((e: IModelOptionsChangedEvent) => {
-            this.onEditorEvent(Events.onDidChangeModelOptions, e)
-        })
-        /**
-         * An event emitted when the configuration of the editor has changed. (e.g. `editor.updateOptions()`)
-         */
-        editor.onDidChangeConfiguration((e: ConfigurationChangedEvent) => {
-            this.onEditorEvent(Events.onDidChangeConfiguration, e)
-        })
-        /**
-         * An event emitted when the cursor position has changed.
-         */
-        editor.onDidChangeCursorPosition((e: ICursorPositionChangedEvent) => {
-            this.onEditorEvent(Events.onDidChangeCursorPosition, e)
-        })
-        /**
-         * An event emitted when the cursor selection has changed.
-         */
-        editor.onDidChangeCursorSelection((e: ICursorSelectionChangedEvent) => {
-            this.onEditorEvent(Events.onDidChangeCursorSelection, e)
-        })
-        /**
-         * An event emitted when the model of this editor has changed (e.g. `editor.setModel()`).
-         */
-        editor.onDidChangeModel((e: IModelChangedEvent) => {
-            this.onEditorEvent(Events.onDidChangeModel, e)
-        })
-        /**
-         * An event emitted when the decorations of the current model have changed.
-         */
-        editor.onDidChangeModelDecorations((e: IModelDecorationsChangedEvent) => {
-            this.onEditorEvent(Events.onDidChangeModelDecorations, e)
-        })
-        /**
-         * An event emitted when the text inside this editor gained focus (i.e. cursor starts blinking).
-         */
-        editor.onDidFocusEditorText(() => {
-            this.onEditorEvent(Events.onDidFocusEditorText)
-        })
-        /**
-         * An event emitted when the text inside this editor lost focus (i.e. cursor stops blinking).
-         */
-        editor.onDidBlurEditorText(() => {
-            this.onEditorEvent(Events.onDidBlurEditorText)
-        })
-        /**
-         * An event emitted when the text inside this editor or an editor widget gained focus.
-         */
-        editor.onDidFocusEditorWidget(() => {
-            this.onEditorEvent(Events.onDidFocusEditorWidget)
-        })
-        /**
-         * An event emitted when the text inside this editor or an editor widget lost focus.
-         */
-        editor.onDidBlurEditorWidget(() => {
-            this.onEditorEvent(Events.onDidBlurEditorWidget)
-        })
-        /**
-         * An event emitted after composition has started.
-         */
-        editor.onDidCompositionStart(() => {
-            this.onEditorEvent(Events.onDidCompositionStart)
-        })
-        /**
-         * An event emitted after composition has ended.
-         */
-        editor.onDidCompositionEnd(() => {
-            this.onEditorEvent(Events.onDidCompositionEnd)
-        })
-        /**
-         * An event emitted when editing failed because the editor is read-only.
-         */
-        editor.onDidAttemptReadOnlyEdit(() => {
-            this.onEditorEvent(Events.onDidAttemptReadOnlyEdit)
-        })
-        /**
-         * An event emitted when users paste text in the editor.
-         */
-        editor.onDidPaste((e: IPasteEvent) => {
-            this.onEditorEvent(Events.onDidPaste, e)
-        })
-        /**
-         * An event emitted on a "mouseup".
-         */
-        editor.onMouseUp((e: IEditorMouseEvent) => {
-            this.onEditorEvent(Events.onMouseUp, e)
-        })
-        /**
-         * An event emitted on a "mousedown".
-         */
-        editor.onMouseDown((e: IEditorMouseEvent) => {
-            this.onEditorEvent(Events.onMouseDown, e)
-        })
-        /**
-         * An event emitted on a "contextmenu".
-         */
-        editor.onContextMenu((e: IEditorMouseEvent) => {
-            this.onEditorEvent(Events.onContextMenu, e)
-        })
-        /**
-         * An event emitted on a "mousemove".
-         */
-        editor.onMouseMove((e: IEditorMouseEvent) => {
-            this.onEditorEvent(Events.onMouseMove, e)
-        })
-        /**
-         * An event emitted on a "mouseleave".
-         */
-        editor.onMouseLeave((e: IPartialEditorMouseEvent) => {
-            this.onEditorEvent(Events.onMouseLeave, e)
-        })
-        /**
-         * An event emitted on a "keyup".
-         */
-        editor.onKeyUp((e: IKeyboardEvent) => {
-            this.onEditorEvent(Events.onKeyUp, e)
-        })
-        /**
-         * An event emitted on a "keydown".
-         */
-        editor.onKeyDown((e: IKeyboardEvent) => {
-            this.onEditorEvent(Events.onKeyDown, e)
-        })
-        /**
-         * An event emitted when the layout of the editor has changed.
-         */
-        editor.onDidLayoutChange((e: EditorLayoutInfo) => {
-            this.onEditorEvent(Events.onDidLayoutChange, e)
-        })
-        /**
-         * An event emitted when the content width or content height in the editor has changed.
-         */
-        editor.onDidContentSizeChange((e: IContentSizeChangedEvent) => {
-            this.onEditorEvent(Events.onDidContentSizeChange, e)
-        })
-        /**
-         * An event emitted when the scroll in the editor has changed.
-         */
-        editor.onDidScrollChange((e: IScrollEvent) => {
-            this.onEditorEvent(Events.onDidScrollChange, e)
-        })
+    unlisten(eventId: number): boolean {
+        if (this._eventBridge == null || this._codeEditor == null)
+            return false
+        this._eventBridge.unlisten(eventId)
+        return true
     }
+
+    isListened(eventId: number): boolean {
+        if (this._eventBridge == null || this._codeEditor == null)
+            return false
+        return this._eventBridge.isListened(eventId)
+    }
+
 
     /**
      * 创建编辑器实例
@@ -271,7 +122,7 @@ export class Editor {
         this._codeEditor = monaco.editor.create(this._container, options)
         if (this._codeEditor == null)
             return false
-        this.setupEditorEvents(this._codeEditor)
+        this._eventBridge = new EditorEventBridge(this._codeEditor)
         this._textModel = new TextModel(this._codeEditor.getModel())
         this._textModel.currentLanguage = options.language
         this.setReady(true)
@@ -586,7 +437,7 @@ export class Editor {
     addCommand(keybinding: number, commandHandlerId: string, context?: string): boolean {
         if (this._codeEditor != null) {
             let _this = this
-            let commandId = this._codeEditor.addCommand(keybinding, function (...args: any[]) {
+            let commandId = this._codeEditor.addCommand(keybinding, function () {
                 _this.onCommand(commandId)
             }, context)
 
@@ -723,7 +574,7 @@ export class Editor {
         return this._codeEditor.getTargetAtClientPoint(clientX, clientY)
     }
 
-    getSupportedActions(clientX: number, clientY: number): IEditorAction[] | null {
+    getSupportedActions(): IEditorAction[] | null {
         if (this._codeEditor == null) {
             return null
         }
