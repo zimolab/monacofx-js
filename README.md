@@ -23,3 +23,7 @@
 
 ## 其他
 样式文件等。
+
+本项目使用VS Code作为IDE，使用npm管理依赖项，使用webpack作为打包工具。代码层面主要使用typescript来实现主要逻辑，辅之以少部分Javascript代码。
+
+**注意** 在webpack.config.js的output项目中指定输出文件位置。
