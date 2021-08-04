@@ -23,10 +23,10 @@ const Events = require("./TextModelEvents.json");
 
 export class TextModel {
     private _javaTextModelProxy = null
-    private readonly _model: IModel = null
+    private _model: IModel | null = null
     private _currentLanguage: string = ""
 
-    get model(): editor.IModel {
+    get model(): editor.IModel | null {
         return this._model
     }
 
@@ -38,7 +38,7 @@ export class TextModel {
         this._currentLanguage = lang
     }
 
-    constructor(model) {
+    constructor(model: IModel) {
         this._model = model
         this.setupTextModelEvents()
 
@@ -89,9 +89,10 @@ export class TextModel {
 
     ///////////////////////////////////////////////////////////////////////////
 
+    
     /////////////////////////////////APIs///////////////////////////////////////
+    // TODO: 创建新TextModel
     static create() {
-
     }
 
     uri(): Uri {
@@ -102,19 +103,20 @@ export class TextModel {
         return this._model.id
     }
 
-    // 映射ITextModel中的API
     /**
-     *
+     * 销毁内部IModel实例
+     * @returns
      */
     dispose(): boolean {
         if (this._model == null)
             return false
         this._model.dispose()
+        this._model = null
         return true
     }
 
     /**
-     *
+     * IModel实例是否被销毁
      */
     isDisposed(): boolean | null {
         if (this._model == null)
@@ -123,7 +125,8 @@ export class TextModel {
     }
 
     /**
-     *
+     * 获取IModel实例的配置项
+     * @returns 
      */
     getOptions(): TextModelResolvedOptions | null {
         if (this._model == null)
