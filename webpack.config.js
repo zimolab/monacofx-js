@@ -9,8 +9,6 @@ module.exports = {
     output: {
         // 输出文件夹
         //path: path.resolve(__dirname, "dist"),
-        //path: "D:\\Users\\xqs1995\\IdeaProjects\\CodeGen3\\src\\main\\resources\\dist",
-        // path: "D:\\MyProjects\\MonacoEditorFx\\core-lib\\src\\main\\resources\\dist",
         path: "D:\\MyProjects\\MonacoEditorFx2\\core-library\\src\\main\\resources\\dist",
         filename: "monacofx.bundle.js",
         // 清理输出文件夹
