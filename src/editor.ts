@@ -85,6 +85,7 @@ export class Editor {
         try {
             this._eventBridge.listen(eventId, this._eventCallback)
         } catch (e) {
+            console.error((e as Error).message)
             return false
         }
         return true
