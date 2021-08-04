@@ -1,4 +1,4 @@
-import {Editor} from "./editor";
+import {Editor} from "./Editor";
 import {_ObjectCreator} from "./ObjectCreator";
 
 require("./index.css");

@@ -8,11 +8,12 @@
 ## index.html/index.js
 入口文件。
 
-## editor.ts
+## Editor.ts、EventBridge.ts
 主要封装了Monaco中IStandaloneEditor中的相关API，并且实现了JS-Kotlin双向调用的机制（主要用于将Monaco Editor的事件桥接到Kotlin中）。
+事件桥接机制的主要逻辑在**EventBridge.ts**中的**EditorEventBridge类**中，在**Editor.ts**中，通过**onEditorEvent(eventId, event)**方法实现对kotlin的调用。
 
-## model.ts
-主要封装了ITextModel中的API，同样实现了跨语言的双向调用，以及事件桥接等机制。
+## Model.ts
+主要封装了ITextModel中的API，同样实现了跨语言的双向调用，以及事件桥接等机制。事件桥接机制的主要逻辑在**EventBridge.ts**中的**TextModelEventBridge类**中，在**Model.ts**中，通过**onTextModelEvent(eventId, event)**方法实现对kotlin的调用。
 
 ## ObjectCreator.ts
 向kotlin暴露某些js对象的构造函数，便于在kotlin中创建这些对象的实例。
