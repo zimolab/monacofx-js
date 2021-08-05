@@ -22,7 +22,7 @@ class EventHandler {
         if (!this._isDisposed) {
             this.monacoEventHandler.dispose()
             this._isDisposed = true
-            // console.log("disposed")
+            console.log("monaco event disposed(" + this.eventId + ")")
         }
     }
 
@@ -172,6 +172,11 @@ export class EditorEventBridge extends EventBridge {
 
             case EditorEvents.onMouseDown:
                 return this._eventSource.onMouseDown((e) => {
+                    eventCallback(eventId, e)
+                })
+
+            case EditorEvents.onMouseMove:
+                return this._eventSource.onMouseMove((e) => {
                     eventCallback(eventId, e)
                 })
 

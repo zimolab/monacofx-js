@@ -66,7 +66,7 @@ export class Editor {
     }
 
     /*******************************事件相关**************************************/
-    onActionRun(actionId: number, ...args: any[]) {
+    onActionRun(actionId: number, ..._args: any[]) {
         if (this._codeEditor != null && this._javaEditorProxy != null) {
             this._javaEditorProxy.onActionRun(actionId)
         }
@@ -126,6 +126,10 @@ export class Editor {
         this._eventBridge = new EditorEventBridge(this._codeEditor)
         this._textModel = new TextModel(this._codeEditor.getModel())
         this._textModel.currentLanguage = options.language
+        let actions = this._codeEditor.getSupportedActions()
+        actions.forEach((action, index)=>{
+            console.log("index: " + index + "; action:" + action.id + "," + action.isSupported() + "，" + action.label + "\n")
+        })
         this.setReady(true)
         return true
     }
@@ -387,7 +391,7 @@ export class Editor {
             let actualDescriptor: IActionDescriptor = {
                 id: descriptor.id,
                 label: descriptor.label,
-                run(editor: editor.ICodeEditor, ...args: any[]): void {
+                run(_editor: editor.ICodeEditor, ...args: any[]): void {
                     _this.onActionRun(this.id, args)
                 }
             }
