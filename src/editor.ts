@@ -20,8 +20,7 @@ import ICommand = editor.ICommand;
 import { TextModel } from "./model";
 import IStandaloneThemeData = editor.IStandaloneThemeData;
 import { EditorEventBridge, EventBridge, EventCallback } from "./EventBridge"
-
-
+import { doClipboardFixForFx } from "./clipboard-fix"
 
 export class Editor {
     private readonly _container: HTMLElement = null
@@ -126,10 +125,7 @@ export class Editor {
         this._eventBridge = new EditorEventBridge(this._codeEditor)
         this._textModel = new TextModel(this._codeEditor.getModel())
         this._textModel.currentLanguage = options.language
-        let actions = this._codeEditor.getSupportedActions()
-        actions.forEach((action, index)=>{
-            console.log("index: " + index + "; action:" + action.id + "," + action.isSupported() + "，" + action.label + "\n")
-        })
+        doClipboardFixForFx(this)
         this.setReady(true)
         return true
     }
@@ -145,6 +141,23 @@ export class Editor {
         this._textModel = model
         return true
     }
+    
+    // clipboard fix
+    private _doClipboardFix() {
+    }
+
+    copy() {
+        console.log("copy()-fx-fix")
+    }
+
+    cut() {
+        console.log("cut()-fx-fix")
+    }
+
+    paste() {
+        console.log("paste()-fx-fix")
+    }
+    // ~clipboard fix
 
     /**
      * 销毁编辑器实例
