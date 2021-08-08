@@ -4,6 +4,7 @@ import {
     IPosition, IRange,
     ISelection, Selection
 } from "monaco-editor"
+import EndOfLinePreference = editor.EndOfLinePreference
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor
 import IStandaloneEditorConstructionOptions = editor.IStandaloneEditorConstructionOptions
 import INewScrollPosition = editor.INewScrollPosition
@@ -20,7 +21,8 @@ import ICommand = editor.ICommand;
 import { TextModel } from "./model";
 import IStandaloneThemeData = editor.IStandaloneThemeData;
 import { EditorEventBridge, EventBridge, EventCallback } from "./EventBridge"
-import { doClipboardFixForFx } from "./clipboard-fix"
+import { doClipboardFixForFx, SystemClipboard } from "./clipboard-fix"
+import { Utils } from "./utils"
 
 export class Editor {
     private readonly _container: HTMLElement = null
@@ -41,11 +43,12 @@ export class Editor {
 
     private DEFAULT_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
         language: "javascript",
-        lineNumbers: "off",
+        lineNumbers: "on",
         roundedSelection: false,
         scrollBeyondLastLine: false,
         readOnly: false,
         theme: this._currentTheme,
+        value: ""
     }
 
     constructor(container: HTMLElement) {
@@ -141,21 +144,140 @@ export class Editor {
         this._textModel = model
         return true
     }
-    
+
+    //TODO: API
+    getCurrentLineNumber(): number | null {
+        return this.getPosition().lineNumber
+    }
+
+    //TODO: API
+    getCurrentLineContent(): string | null {
+        return this._textModel?.getLineContent(this.getCurrentLineNumber())
+    }
+
+    //TODO: API
+    getSelectedContent(
+        lineContentForEmptySelection: boolean = false,
+        eol?: EndOfLinePreference): Array<string> | null {
+        let selections = this.getSelections()
+        return selections != null ? this._textModel?.getContentInSelections(selections, lineContentForEmptySelection, eol) : null
+    }
+
+    //TODO: API
+    deleteLineAt(lineNumber: number, computeAfterCursorPosition: boolean = true): string | null {
+        if (this._textModel == null || lineNumber > this._textModel.getLineCount() || lineNumber < 1)
+            return null
+        this.focus()
+        let content = this._textModel.getLineContent(lineNumber)
+        let afterCursorPosition = computeAfterCursorPosition ? Utils.computeCursorForDeleteLineEdit(lineNumber, 1) : undefined
+        let edit = Utils.newDeleteLineEdit(lineNumber, 1)
+        if (computeAfterCursorPosition) {
+            this.executeEdits("", [edit], [afterCursorPosition])
+        } else {
+            this.executeEdits("", [edit])
+        }
+        this.focus()
+        return content
+    }
+
+    // TODO: API
+    deleteSelectedContent(
+        deleteLineForEmptySelection: boolean = false,
+        computeAfterCursorPosition: boolean = true,
+        eol?: EndOfLinePreference): string[] | null {
+        if (this._textModel == null)
+            return null
+        this.focus()
+        let selections = this.getSelections()
+        let content = this.getSelectedContent(deleteLineForEmptySelection, eol)
+        let edits = Utils.newDeleteEdits(selections, deleteLineForEmptySelection)
+        if (computeAfterCursorPosition) {
+            let afterCursorPositions = Utils.computeCursorForDeleteEdits(selections, deleteLineForEmptySelection)
+            this.executeEdits("", edits, afterCursorPositions.length > 0 ? afterCursorPositions : undefined)
+        } else {
+            this.executeEdits("", edits)
+        }
+        this.focus()
+        return content
+    }
+
+    // TODO: API
+    insertContentAtPosition(
+        position: IPosition,
+        content: string,
+        computeAfterCursorPosition: boolean = true): boolean {
+        if (this._textModel == null)
+            return false
+        this.focus()
+        let edit = Utils.newInsertAtPositionEdit(position, content)
+        let result: boolean = false
+        if (computeAfterCursorPosition) {
+            let afterCursorPosition = Utils.computeCursorForInsertAtPositionEdit(position, content)
+            result = this.executeEdits("", [edit], [afterCursorPosition])
+        } else {
+            result = this.executeEdits("", [edit])
+        }
+        this.focus()
+        return result
+    }
+
+    // TODO: API
+    insertContentAtCurrentPosition(content: string, computeAfterCursorPosition: boolean = true): boolean {
+        return this.insertContentAtPosition(this.getPosition(), content, computeAfterCursorPosition)
+    }
+
+    // TODO: API
+    insertContentAtSelection(
+        selection: ISelection,
+        content: string,
+        computeAfterCursorPosition: boolean = true): boolean {
+        if (this._textModel == null)
+            return false
+        let edit = Utils.newInsertAtSelectionEdit(selection, content)
+        return this.executeEdits("", [edit])
+    }
+
+    // TODO: API
+    insertContentAtSelections(
+        selections: ISelection[],
+        content: string,
+        computeAfterCursorPosition: boolean = true): boolean {
+        if (this._textModel == null)
+            return false
+        let edits = Utils.newInsertAtSelectionEdits(selections, content)
+        return this.executeEdits("", edits)
+    }
+
     // clipboard fix
-    private _doClipboardFix() {
+    // TODO: API
+    copy(): boolean {
+        let contetnt = this.getSelectedContent(true)?.join(this._textModel.getEOL())
+        if (contetnt != null) {
+            SystemClipboard.setContent(contetnt)
+            return true
+        } else {
+            return false
+        }
     }
 
-    copy() {
-        console.log("copy()-fx-fix")
-    }
-
+    // TODO: API
     cut() {
-        console.log("cut()-fx-fix")
+        let content = this.deleteSelectedContent(true, true)?.join(this._textModel.getEOL())
+        if (content != null) {
+            SystemClipboard.setContent(content)
+            return true
+        }
+        return false
     }
 
-    paste() {
-        console.log("paste()-fx-fix")
+    paste(): boolean {
+        let selections = this.getSelections()
+        let content = SystemClipboard.getContent()
+        if (selections == null || content == null)
+            return false
+        selections.forEach((s)=>{
+            this.executeEdits("", [Utils.newInsertAtSelectionEdit(s, content)])
+        })
     }
     // ~clipboard fix
 
@@ -599,14 +721,14 @@ export class Editor {
         return this._codeEditor.getSupportedActions()
     }
 
-    getSelections(): ISelection[] | null {
+    getSelections(): Selection[] | null {
         if (this._codeEditor == null) {
             return null
         }
         return this._codeEditor.getSelections()
     }
 
-    getSelection(): ISelection | null {
+    getSelection(): Selection | null {
         if (this._codeEditor == null) {
             return null
         }

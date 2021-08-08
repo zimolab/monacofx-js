@@ -2,6 +2,7 @@ import {
     editor,
     IPosition,
     IRange,
+    ISelection,
     Position,
     Range,
     Selection,
@@ -18,6 +19,7 @@ import IIdentifiedSingleEditOperation = editor.IIdentifiedSingleEditOperation;
 import ICursorStateComputer = editor.ICursorStateComputer;
 import IValidEditOperation = editor.IValidEditOperation;
 import FindMatch = editor.FindMatch;
+import { Utils } from "./utils";
 
 
 export class TextModel {
@@ -89,7 +91,7 @@ export class TextModel {
 
     ///////////////////////////////////////////////////////////////////////////
 
-    
+
     /////////////////////////////////APIs///////////////////////////////////////
     // TODO: 创建新TextModel
     static create() {
@@ -342,8 +344,8 @@ export class TextModel {
     }
 
     pushEditOperations(beforeCursorState: Selection[] | null,
-                       editOperations: IIdentifiedSingleEditOperation[],
-                       cursorStateComputer: ICursorStateComputer): Selection[] | null {
+        editOperations: IIdentifiedSingleEditOperation[],
+        cursorStateComputer: ICursorStateComputer): Selection[] | null {
         if (this._model == null)
             return null
         return this._model.pushEditOperations(beforeCursorState, editOperations, cursorStateComputer)
@@ -376,13 +378,13 @@ export class TextModel {
 
 
     findMatches(searchString: string,
-                searchScope: IRange | IRange[],
-                isRegex: boolean,
-                matchCase: boolean,
-                wordSeparators: string | null,
-                captureMatches: boolean,
-                searchOnlyEditableRange?: boolean,
-                limitResultCount?: number): FindMatch[] | null {
+        searchScope: IRange | IRange[],
+        isRegex: boolean,
+        matchCase: boolean,
+        wordSeparators: string | null,
+        captureMatches: boolean,
+        searchOnlyEditableRange?: boolean,
+        limitResultCount?: number): FindMatch[] | null {
         if (this._model == null)
             return null
         if (searchOnlyEditableRange == undefined) {
@@ -393,22 +395,22 @@ export class TextModel {
     }
 
     findNextMatch(searchString: string,
-                  searchStart: IPosition,
-                  isRegex: boolean,
-                  matchCase: boolean,
-                  wordSeparators: string | null,
-                  captureMatches: boolean): FindMatch | null {
+        searchStart: IPosition,
+        isRegex: boolean,
+        matchCase: boolean,
+        wordSeparators: string | null,
+        captureMatches: boolean): FindMatch | null {
         if (this._model == null)
             return null
         return this._model.findNextMatch(searchString, searchStart, isRegex, matchCase, wordSeparators, captureMatches)
     }
 
     findPreviousMatch(searchString: string,
-                      searchStart: IPosition,
-                      isRegex: boolean,
-                      matchCase: boolean,
-                      wordSeparators: string | null,
-                      captureMatches: boolean): FindMatch | null {
+        searchStart: IPosition,
+        isRegex: boolean,
+        matchCase: boolean,
+        wordSeparators: string | null,
+        captureMatches: boolean): FindMatch | null {
         if (this._model == null)
             return null
         return this._model.findPreviousMatch(searchString, searchStart, isRegex, matchCase, wordSeparators, captureMatches)
@@ -416,4 +418,91 @@ export class TextModel {
 
     //////////////////////////////////////////////////////////////////////////
 
+    //////////////////////////////扩展API/////////////////////////////////////
+    //TODO: API
+    getContentInRange(range: IRange,
+        lineContentForEmptyRange: boolean = false,
+        eol?: EndOfLinePreference): string | null {
+
+        if (!Utils.isEmptyRange(range)) {
+            return this.getValueInRange(range, eol)
+        } else {
+            if (lineContentForEmptyRange) {
+                return this.getLineContent(range.endLineNumber)
+            } else {
+                return null
+            }
+        }
+    }
+
+    //TODO: API
+    getContentInRanges(
+        ranges: IRange[],
+        lineContentForEmptyRange: boolean = false,
+        eol?: EndOfLinePreference): Array<string> {
+        let result = new Array<string>()
+        ranges.forEach((currentRange) => {
+
+            let selected = this.getContentInRange(currentRange, lineContentForEmptyRange, eol)
+            if (selected != null) {
+                result.push(selected)
+            }
+        })
+        return result
+    }
+
+    //TODO: API
+    getContentInSelection(
+        selection: ISelection,
+        lineContentForEmptySelection: boolean = false,
+        eol?: EndOfLinePreference): string | null {
+
+        return this.getContentInRange(Utils.selection2Range(selection), lineContentForEmptySelection, eol)
+    }
+
+    //TODO: API
+    getContentInSelections(
+        selections: ISelection[],
+        lineContentForEmptySelection: boolean = false,
+        eol?: EndOfLinePreference): Array<string> {
+
+        let result = new Array<string>()
+        selections.forEach((selection) => {
+            let content = this.getContentInSelection(selection, lineContentForEmptySelection, eol)
+            if (content != null)
+                result.push(content)
+        })
+        return result
+    }
+
+    //TODO: API
+    deleteLineAt(lineNumber: number, beforeCursorPositions: Selection[] = null, computeAfterCursorPosition: boolean = true): string | null {
+        if (this._model == null || lineNumber > this.getLineCount() || lineNumber < 1)
+            return null
+        let content = this.getLineContent(lineNumber)
+        let afterCursorPosition = Utils.computeCursorForDeleteLineEdit(lineNumber, 1)
+        let edit = Utils.newDeleteLineEdit(lineNumber, 1)
+        this.pushEditOperations(beforeCursorPositions, [edit], () => {
+            return computeAfterCursorPosition ? [afterCursorPosition] : null
+        })
+        return content
+    }
+
+    //TODO: API
+    deleteContentInSelection(
+        selections: Selection[],
+        deleteLineForEmptySelection: boolean = false,
+        computeAfterCursorPosition: boolean = true,
+        eol?: EndOfLinePreference): string[] | null {
+
+        if (this._model == null)
+            return null
+        let content = this.getContentInSelections(selections, deleteLineForEmptySelection, eol)
+        let afterCursorPositions = Utils.computeCursorForDeleteEdits(Utils.selections2Ranges(selections), deleteLineForEmptySelection)
+        let edits = Utils.newDeleteEdits(selections, deleteLineForEmptySelection)
+        this.pushEditOperations(selections, edits, ()=>{
+            return computeAfterCursorPosition? afterCursorPositions : null
+        })
+        return content
+    }
 }

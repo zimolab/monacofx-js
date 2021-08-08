@@ -1,3 +1,4 @@
+import { SystemClipboard } from "./clipboard-fix";
 import {Editor} from "./Editor";
 import {_ObjectCreator} from "./ObjectCreator";
 
@@ -10,6 +11,7 @@ require("./hostenv");
         // 以下对象来自宿主环境
         const Logger = _global.javaLogger;
         const javaMonacoEditor = _global.javaEditorFx;
+        const javaClipboard = _global.javaClipboard;
         // 重定向控制台输出
         if (Logger != null) {
             console.log = function (message) {
@@ -25,6 +27,7 @@ require("./hostenv");
                 Logger.info(message)
             }
         }
+        SystemClipboard.init(javaClipboard)
         _global.ME = {};
         _global.ME.ObjectCreator = new _ObjectCreator();
         _global.ME.editor = new Editor(document.body);

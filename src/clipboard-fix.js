@@ -162,13 +162,15 @@ export class StandaloneKeyBindingUtils {
 }
 
 export function doClipboardFixForFx(editor) {
+    // 受影响无法正常工作的actions
     let affectedActions = [
         "editor.action.clipboardCopyAction",
         "editor.action.clipboardPasteAction",
         "editor.action.clipboardCutAction",
         "editor.action.clipboardCopyWithSyntaxHighlightingAction",
     ]
-    
+
+    // 自定义用于取代默认实现的actions
     let fxFixActions = [
         {
             id: "editor.action.clipboardCopyAction.fx_fix",
@@ -204,14 +206,44 @@ export function doClipboardFixForFx(editor) {
 
     let keybindingUtils = new StandaloneKeyBindingUtils(editor._codeEditor)
     
+    // 首先从右键菜单和Command Palette中移除受影响的actons
     MenuUtils.removeMenuItemById(editorContextMenu, affectedActions)
     MenuUtils.removeMenuItemById(commandPaletteMenu, affectedActions)
-
+    // 移除原有实现的快捷键
     affectedActions.forEach((action)=>{
         keybindingUtils.removeKeyBinding(action.id)
     })
-
+    // 添加自定义的实现
     fxFixActions.forEach((action)=>{
         editor._codeEditor.addAction(action)
     })
+}
+
+// 该类用于操作系统clipboard，使用了java层面注入的API
+export class SystemClipboard {
+    _clipboard = null
+
+    static init(javaClipboard) {
+        this._clipboard = javaClipboard
+    }
+
+    static getContent() {
+        console.log()
+        if(this._clipboard != null) {
+            return this._clipboard.getContent()
+        }
+        return null
+    }
+
+    static setContent(content) {
+        if(this._clipboard != null) {
+            this._clipboard.setContent(content)
+        }
+    }
+
+    static clearClipboard() {
+        if(this._clipboard != null) {
+            this._clipboard.clearClipboard()
+        }
+    }
 }
