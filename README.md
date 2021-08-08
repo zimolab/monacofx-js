@@ -25,7 +25,8 @@
 一些独立于Editor、TextModel实例之外的实用函数的集合。
 
 ## clipboard-fix.js
-为了解决Monaco editor(v0.26.1)在javafx webview环境下cut/copy/paste功能异常的权宜之计。
+为了解决Monaco editor(v0.26.1)在javafx webview环境下cut/copy/paste功能异常的权宜之计
+目前实现了复制、剪切、粘贴的基本功能，而且行为基本上与Monaco Edito中原生的实现一致，包括多光标情况下的复制、剪切、粘贴操作。但也存在几点不同的地方，在空行上执行剪切操作不会删除空行等。日常的使用基本上是没问题了。希望官方可以尽快修复相关的bug。
 
 ## 其他
 样式文件等。
